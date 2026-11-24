@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import type { Message } from '../types';
 import { useT } from '../i18n';
 import ChatBubble from './ChatBubble';
+import GuideCharacter from './GuideCharacter';
 import styles from './ChatWindow.module.css';
 
 interface Props {
@@ -33,7 +34,9 @@ export default function ChatWindow({ messages, loading }: Props) {
     <div ref={windowRef} className={styles.window}>
       {messages.length === 0 && (
         <div className={styles.empty}>
-          <span className={styles.emptyIcon}>⬡</span>
+          <div className={styles.emptyFigure}>
+            <GuideCharacter className={styles.emptyCharacter} />
+          </div>
           <p className={styles.emptyTitle}>{t("empty.title")}</p>
           <p className={styles.emptyHint}>
             {t("empty.hint")}
@@ -50,7 +53,7 @@ export default function ChatWindow({ messages, loading }: Props) {
 
       {showTypingIndicator && (
         <div className={styles.typingRow}>
-          <div className={styles.avatar}>⬡</div>
+          <div className={styles.avatar}>策</div>
           <div className={styles.typing}>
             <span />
             <span />

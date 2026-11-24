@@ -9,23 +9,31 @@
 .userRow { justify-content: flex-end; }
 
 .avatar {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: var(--bg-elevated);
-  border: 1px solid var(--bg-border);
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: radial-gradient(circle at 40% 35%, #f5c8422e, #0d1420 75%);
+  border: 1px solid var(--accent-gold-dim);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: .8rem;
   color: var(--accent-gold);
   flex-shrink: 0;
   font-family: var(--font-display);
   font-weight: 700;
+  box-shadow: 0 0 12px rgba(245,200,66,.14);
+}
+.avatarInner {
+  font-size: .9rem;
+  line-height: 1;
+  text-shadow: 0 0 8px var(--accent-gold-glow);
 }
 .userAvatar {
   color: var(--text-secondary);
-  font-size: .65rem;
+  font-size: .72rem;
+  background: var(--bg-elevated);
+  border-color: var(--bg-border);
+  box-shadow: none;
 }
 
 .bubble {

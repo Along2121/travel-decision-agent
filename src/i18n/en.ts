@@ -1,29 +1,45 @@
 const en = {
-  // Header
-  "app.title": "OpenAI Agents Starter",
-  "app.subtitle": "Running on EdgeOne Makers with session memory & Agent Tools",
+  // Header / brand
+  "app.title": "RouteMate",
+  "app.subtitle": "Travel Decision Agent · Find malls / Compare distance / Recommend",
+  "brand.name": "RouteMate",
+  "brand.en": "ROUTE MATE",
+  "brand.role": "Travel Decision Agent",
+
+  // Mode badges
+  "mode.plan": "PLAN MODE",
+  "mode.tools": "TOOLS READY",
+  "mode.running": "THINKING",
+  "mode.immersive": "Immersive",
+  "mode.exitImmersive": "Exit Immersive",
 
   // Empty state
-  "empty.title": "OpenAI Agents Starter",
-  "empty.hint": "I'm an OpenAI Agent running on EdgeOne with custom tools and session memory. I can help with weather, clothing advice, translation, and text statistics.",
-  "empty.features": "EdgeOne Store · Session Memory · Agent Tools",
+  "empty.title": "Hi, I'm Xiao Ce",
+  "empty.hint": "Tell me where you are and which brands you like. I'll search nearby malls on the map, compare distances, and give you the best recommendation.",
+  "empty.features": "AMap · Brand Match · Distance · Follow-ups",
 
   // Chat input
-  "chat.placeholder": "Type a message...  ⏎ Send · Shift+⏎ Newline",
-  "chat.hint": "Powered by OpenAI Agents SDK + EdgeOne Makers · Demo only",
+  "chat.placeholder": "Tell me your location and preferred brands...  ⏎ Send · Shift+⏎ Newline",
+  "chat.hint": "Data from AMap · Powered by OpenAI Agents SDK + EdgeOne Makers",
 
-  // Preset questions
-  "preset.1": "What is the weather like in Beijing now? Any clothing suggestions?",
-  "preset.2": "Translate \"Hello, welcome to Beijing!\" into Chinese and count the characters.",
+  // Preset chips
+  "preset.1": "I'm near Honglian South Rd subway. Find a mall with 倍轻松.",
+  "preset.2": "Rank nearby malls by distance for me.",
+
+  // Quick actions (top bar)
+  "action.plan": "Start Planning",
+  "action.malls": "Find Malls",
+  "action.brand": "Brand Filter",
+  "action.followup": "Try Another",
+  "action.more": "More",
 
   // Tool indicators
-  "tool.weather": "Weather",
-  "tool.clothing": "Clothing",
-  "tool.translate": "Translate",
-  "tool.statistics": "Statistics",
+  "tool.geocode": "Geocode",
+  "tool.search": "Mall Search",
+  "tool.distance": "Distance",
 
   // Status & errors
-  "status.error": "Request failed. Please check if the backend service is running.",
+  "status.error": "⚠️ Request failed. Please check if the backend service is running.",
   "status.stopped": "⏹ *Generation stopped*",
   "status.backendError": "Backend abort request failed. The server may still be running.",
 
@@ -34,19 +50,30 @@ const en = {
   "debug.empty": "Waiting for SSE events...",
   "debug.emptyHint": "After sending a message, all raw backend data will be displayed here.",
 
+  // Right panel tabs
+  "panel.code": "Code",
+  "panel.trace": "Trace",
+
   // Conversation sidebar
   "sidebar.label": "Conversation list",
-  "sidebar.title": "Chats",
-  "sidebar.newChat": "New chat",
+  "sidebar.title": "Trips",
+  "sidebar.newChat": "New trip",
   "sidebar.loading": "Loading conversations...",
   "sidebar.loadMore": "Load more",
   "sidebar.loadingMore": "Loading...",
-  "sidebar.emptyTitle": "No conversations yet",
-  "sidebar.emptyHint": "Click \"New chat\" to start your first conversation.",
+  "sidebar.emptyTitle": "No trips yet",
+  "sidebar.emptyHint": "Click \"New trip\" to start planning your first route.",
   "sidebar.delete": "Delete conversation",
   "sidebar.deleteConfirm": "Permanently delete this conversation? This cannot be undone.",
 
-  // Aria labels (button hover/screen-reader)
+  // Hero panel
+  "hero.badge": "GUIDE ONLINE",
+  "hero.name": "Xiao Ce",
+  "hero.role": "Your travel decision guide",
+  "hero.status": "Ready to find malls & compare distances",
+  "hero.tip": "Try telling me your location and a brand you like",
+
+  // Aria labels
   "aria.send": "Send",
   "aria.clearHistory": "Clear history",
   "aria.stopGeneration": "Stop generation",
@@ -54,7 +81,7 @@ const en = {
   // Language toggle
   "lang.switch": "中文",
 
-  // ─── Floating bottom-right action badges ─────────────────────────────
+  // Floating badges
   "floatingLink.deploy": "Deploy",
   "floatingLink.github": "GitHub",
 } as const;

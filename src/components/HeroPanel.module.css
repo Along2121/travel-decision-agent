@@ -1,0 +1,184 @@
+.panel {
+  position: relative;
+  flex: 0 0 auto;
+  height: 46%;
+  min-height: 230px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  overflow: hidden;
+  border-top: 1px solid var(--bg-border);
+  background:
+    radial-gradient(ellipse at 50% 78%, #1c5a6466 0%, transparent 62%),
+    linear-gradient(180deg, #0e1620 0%, #0b1119 100%);
+  transition: height 400ms cubic-bezier(.22,1,.36,1), min-height 400ms cubic-bezier(.22,1,.36,1);
+}
+
+.panel.immersive {
+  height: 100%;
+  min-height: 100%;
+  border-top: none;
+}
+
+.aura {
+  position: absolute;
+  top: 8%;
+  left: 50%;
+  width: 320px;
+  height: 320px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, #4fd6c41f 0%, transparent 68%);
+  pointer-events: none;
+  animation: auraPulse 6s ease-in-out infinite alternate;
+}
+@keyframes auraPulse {
+  0%   { transform: translateX(-50%) scale(1); opacity: .7; }
+  100% { transform: translateX(-50%) scale(1.12); opacity: 1; }
+}
+
+.top {
+  position: absolute;
+  top: 12px;
+  left: 14px;
+  z-index: 2;
+}
+.online {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid #4fd6c455;
+  background: #0d2a3033;
+  color: #7fe9df;
+  font-family: var(--font-mono);
+  font-size: .58rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.onlineDot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #5fe0d0;
+  box-shadow: 0 0 8px #5fe0d0;
+  animation: onlineBlink 1.8s ease-in-out infinite;
+}
+@keyframes onlineBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .35; }
+}
+
+.figure {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.character {
+  height: 100%;
+  width: auto;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: bottom;
+  filter: drop-shadow(0 0 24px rgba(79, 214, 196, .18));
+  animation: charIn 700ms cubic-bezier(.22,1,.36,1) both, charFloat 5s ease-in-out 700ms infinite alternate;
+}
+@keyframes charIn {
+  from { opacity: 0; transform: translateY(16px) scale(.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes charFloat {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-6px); }
+}
+.platform {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 70%;
+  height: 26px;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse, #4fd6c433 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.info {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  padding: 4px 18px 48px;
+  text-align: center;
+}
+.nameRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+}
+.name {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  color: var(--accent-gold);
+  text-shadow: 0 0 14px var(--accent-gold-glow);
+}
+.role {
+  font-size: .6rem;
+  color: var(--text-secondary);
+  letter-spacing: .04em;
+}
+.status {
+  margin-top: 3px;
+  font-size: .62rem;
+  color: #8fdcd4;
+  letter-spacing: .02em;
+}
+.tip {
+  margin-top: 5px;
+  font-size: .58rem;
+  color: var(--text-muted);
+  letter-spacing: .02em;
+}
+
+.immersiveBtn {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 18px;
+  border-radius: 999px;
+  border: 1px solid #f5c842aa;
+  background: linear-gradient(135deg, #f5c84226, #e09a1f18);
+  color: var(--accent-gold);
+  font-family: var(--font-mono);
+  font-size: .66rem;
+  font-weight: 600;
+  letter-spacing: .06em;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 0 18px #f5c84222;
+  transition: background var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
+}
+.immersiveBtn:hover {
+  background: linear-gradient(135deg, #f5c8423d, #e09a1f2b);
+  box-shadow: 0 0 26px #f5c84244;
+  transform: translateX(-50%) translateY(-2px);
+}
+.immersiveBtn:active {
+  transform: translateX(-50%) translateY(0) scale(.97);
+}
+.btnIcon {
+  font-size: .9rem;
+  line-height: 1;
+}

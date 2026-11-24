@@ -18,49 +18,48 @@ import ChatInput from './components/ChatInput';
 import DebugPanel from './components/DebugPanel';
 import CodeViewer from './components/CodeViewer';
 import ConversationSidebar from './components/ConversationSidebar';
+import HeroPanel from './components/HeroPanel';
 import GitHubLink from './components/GitHubLink';
 import DeployLink from './components/DeployLink';
 import { I18nProvider, LangToggle, useT, MessageKeys } from './i18n';
 import { deleteSnapshot, loadSnapshot, saveSnapshot } from './lib/chatUiStore';
 import styles from './App.module.css';
 
-const LAMP_IDS = ['get_weather', 'get_clothing_advice', 'translate_text', 'text_statistics'] as const;
+/** 三个高德地图工具 —— 与 agents/_tools.py 一一对应 */
+const LAMP_IDS = ['geocode_location', 'search_malls_by_keyword', 'get_distance'] as const;
 const LAMP_ICONS: Record<string, string> = {
-  get_weather: '☀️',
-  get_clothing_advice: '👔',
-  translate_text: '🌐',
-  text_statistics: '📊',
+  geocode_location: '📍',
+  search_malls_by_keyword: '🏬',
+  get_distance: '📏',
 };
 const LAMP_I18N_KEYS: Record<string, string> = {
-  get_weather: 'tool.weather',
-  get_clothing_advice: 'tool.clothing',
-  translate_text: 'tool.translate',
-  text_statistics: 'tool.statistics',
+  geocode_location: 'tool.geocode',
+  search_malls_by_keyword: 'tool.search',
+  get_distance: 'tool.distance',
 };
+
+/** 顶部快捷功能按钮：点击即发送对应的真实提问 */
+const QUICK_ACTIONS = [
+  { key: 'action.plan', message: '我在红莲南路地铁站附近，想找一个有倍轻松的商场，哪个最近' },
+  { key: 'action.malls', message: '帮我找附近的商场，按距离从近到远排序' },
+  { key: 'action.brand', message: '我想找一个既有倍轻松又有西厅村屋的商场，哪个最近' },
+  { key: 'action.followup', message: '如果不要求两个品牌同时存在，还有没有距离更近的选择？' },
+  { key: 'action.more', message: '你能帮我做什么？请介绍一下你的能力' },
+] as const;
 
 const CONVERSATION_ID_STORAGE_KEY = 'eo_conversation_id';
 
-/**
- * eo-uuid: stable per-browser identifier. Generated client-side on first
- * visit and persisted in localStorage. Used as the `userId` argument to all
- * memory-store calls so that listConversations / clear / delete can scope
- * results to "this browser's conversations only". Cross-template aware:
- * intentionally shares the same localStorage key with claude-agent-starter
- * so the same browser sees the same identity in either template.
- */
+/** stable per-browser identifier, scoped to "this browser's conversations only" */
 const EO_USER_ID_STORAGE_KEY = 'eo-uuid';
 const CONVERSATIONS_PAGE_SIZE = 20;
 
-/** Returns existing conversation ID from localStorage, or null if first visit */
 function getExistingConversationId(): string | null {
   return localStorage.getItem(CONVERSATION_ID_STORAGE_KEY);
 }
 
-/** Returns existing or creates a new conversation ID */
 function getOrCreateConversationId(): string {
   const cached = getExistingConversationId();
   if (cached) return cached;
-
   const conversationId = crypto.randomUUID();
   localStorage.setItem(CONVERSATION_ID_STORAGE_KEY, conversationId);
   return conversationId;
@@ -74,7 +73,6 @@ function getOrCreateEoUuid(): string {
   return eoUuid;
 }
 
-// Module-level dedup flag — outside React lifecycle, unaffected by StrictMode
 let _historyFetchInFlight = false;
 
 export default function App() {
@@ -104,8 +102,8 @@ function AppInner() {
   const [historyLoading, setHistoryLoading] = useState(true);
   const [debugEvents, setDebugEvents] = useState<RawSseEvent[]>([]);
   const [rightPanelMode, setRightPanelMode] = useState<'code' | 'debug'>('code');
+  const [immersive, setImmersive] = useState(false);
 
-  // Conversation list (sidebar) state
   const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [conversationsLoading, setConversationsLoading] = useState(true);
   const [conversationsLoadingMore, setConversationsLoadingMore] = useState(false);
@@ -120,12 +118,10 @@ function AppInner() {
   const initDoneRef = useRef(false);
   const snapshotTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Keep conversationIdRef in sync with the activeConversationId state.
   useEffect(() => {
     conversationIdRef.current = activeConversationId;
   }, [activeConversationId]);
 
-  // Update lamp labels when language changes
   useEffect(() => {
     setLamps(prev =>
       prev.map(l => ({
@@ -135,30 +131,24 @@ function AppInner() {
     );
   }, [t]);
 
-  // Persist a UI snapshot of the current conversation's messages to IndexedDB
-  // (debounced) so a refresh restores instantly without hitting /history.
   useEffect(() => {
     if (messages.length === 0) return;
     if (!initDoneRef.current) return;
-
     if (snapshotTimerRef.current) clearTimeout(snapshotTimerRef.current);
     snapshotTimerRef.current = setTimeout(() => {
       saveSnapshot(conversationIdRef.current, messages).catch(err => {
         console.warn('[chatUiStore] snapshot save failed:', err);
       });
     }, 500);
-
     return () => {
       if (snapshotTimerRef.current) clearTimeout(snapshotTimerRef.current);
     };
   }, [messages]);
 
-  /** Load full message list for a conversation: snapshot first, then /history reconciliation. */
   const loadConversation = useCallback(async (convId: string) => {
     setHistoryLoading(true);
     let restoredFromSnapshot = false;
     let snapshotMessageCount = 0;
-
     try {
       const snapshot = await loadSnapshot(convId).catch(() => [] as Message[]);
       snapshotMessageCount = snapshot.length;
@@ -167,7 +157,6 @@ function AppInner() {
         setMessages(snapshot);
         setHistoryLoading(false);
       }
-
       const history = await fetchConversationHistory(convId, eoUuidRef.current);
       if (history.length > 0) {
         if (!restoredFromSnapshot || history.length > snapshotMessageCount) {
@@ -183,7 +172,6 @@ function AppInner() {
     }
   }, []);
 
-  /** Refresh sidebar conversations list. mode='replace' → reload from start; 'append' → add next page. */
   const refreshConversations = useCallback(async (mode: 'replace' | 'append', cursor?: string) => {
     if (mode === 'append') {
       setConversationsLoadingMore(true);
@@ -197,9 +185,7 @@ function AppInner() {
         order: 'desc',
         after: cursor,
       });
-
       setNextCursor(res.nextCursor);
-
       if (mode === 'append') {
         setConversations(prev => {
           const seen = new Set(prev.map(c => c.id));
@@ -221,18 +207,13 @@ function AppInner() {
     }
   }, []);
 
-  // Initial load: history (only if previously visited) + conversations list
   useEffect(() => {
     if (_historyFetchInFlight) {
       void refreshConversations('replace');
       return;
     }
     _historyFetchInFlight = true;
-
     if (!hadExistingConversationIdRef.current) {
-      // First visit: skip /history fetch (would be empty). Still kick off the
-      // conversations list so the sidebar shows the user's other browsers'
-      // conversations if any (rare but possible).
       setHistoryLoading(false);
       initDoneRef.current = true;
       void refreshConversations('replace').finally(() => {
@@ -240,7 +221,6 @@ function AppInner() {
       });
       return;
     }
-
     void loadConversation(conversationIdRef.current).finally(() => {
       void refreshConversations('replace').finally(() => {
         _historyFetchInFlight = false;
@@ -249,18 +229,14 @@ function AppInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /** Update the current bot message's content via an updater function. */
   const updateBotMessage = useCallback((updater: (content: string) => string) => {
     setMessages(prev =>
       prev.map(m =>
-        m.id === botMsgIdRef.current
-          ? { ...m, content: updater(m.content) }
-          : m
+        m.id === botMsgIdRef.current ? { ...m, content: updater(m.content) } : m
       )
     );
   }, []);
 
-  /** Clear the assistant message's `streaming` flag (hides the blinking caret). */
   const clearBotStreaming = useCallback(() => {
     setMessages(prev => {
       let changed = false;
@@ -291,7 +267,6 @@ function AppInner() {
       content: text,
       timestamp: Date.now(),
     };
-
     const botMsgId = crypto.randomUUID();
     botMsgIdRef.current = botMsgId;
     const botMsg: Message = {
@@ -301,19 +276,9 @@ function AppInner() {
       timestamp: Date.now(),
       streaming: true,
     };
-
     setMessages(prev => [...prev, userMsg, botMsg]);
     setLoading(true);
 
-    /**
-     * Optimistic sidebar update — fires as soon as the backend emits its first
-     * SSE event (matches ChatGPT's "new chat appears the moment streaming
-     * starts" UX). For brand-new conversations we prepend a synthesized summary;
-     * for existing ones we just bump them to the top.
-     *
-     * Server reconciliation still happens in onDone() via refreshConversations,
-     * which can correct the title if the runtime later overrides it.
-     */
     let sidebarPrimed = false;
     const cleanedText = text.replace(/\s+/g, ' ').trim();
     const optimisticTitle =
@@ -324,10 +289,8 @@ function AppInner() {
     const primeSidebar = () => {
       if (sidebarPrimed) return;
       sidebarPrimed = true;
-
       const convId = conversationIdRef.current;
       const now = Date.now();
-
       setConversations(prev => {
         const idx = prev.findIndex(c => c.id === convId);
         if (idx === -1) {
@@ -350,30 +313,18 @@ function AppInner() {
       onTextDelta(delta) {
         updateBotMessage(content => content + delta);
       },
-
       onToolCalled(toolName) {
         setLamps(prev =>
           prev.map(l =>
-            l.id === toolName
-              ? { ...l, active: true, animKey: l.animKey + 1 }
-              : l
+            l.id === toolName ? { ...l, active: true, animKey: l.animKey + 1 } : l
           )
         );
         setTimeout(() => {
-          setLamps(prev =>
-            prev.map(l => (l.id === toolName ? { ...l, active: false } : l))
-          );
+          setLamps(prev => prev.map(l => (l.id === toolName ? { ...l, active: false } : l)));
         }, 1000);
       },
-
       onRawEvent(event) {
-        // Every backend SSE frame flows through here, so this is the cheapest
-        // hook for "first byte from backend".
         primeSidebar();
-
-        // Coalesce consecutive text_delta events into a single growing entry,
-        // so a multi-paragraph response doesn't flood the debug panel with
-        // hundreds of one-token rows.
         if (event.eventType === 'text_delta') {
           const delta = (event.data as { delta?: string } | null)?.delta ?? '';
           setRightPanelMode('debug');
@@ -396,15 +347,11 @@ function AppInner() {
         setRightPanelMode('debug');
         setDebugEvents(prev => [...prev, event]);
       },
-
       onDone() {
         clearBotStreaming();
         finishStream();
-        // Reconcile with backend so the title (and any other fields the runtime
-        // synthesized) reflect the server's authoritative state.
         void refreshConversations('replace');
       },
-
       onError() {
         clearBotStreaming();
         updateBotMessage(content => content || t("status.error"));
@@ -415,40 +362,22 @@ function AppInner() {
       userMsgId: userMsg.id,
       botMsgId,
     });
-
     abortCtrlRef.current = ctrl;
   }, [updateBotMessage, clearBotStreaming, finishStream, refreshConversations, t]);
 
   const handleClearHistory = useCallback(() => {
     const oldConvId = conversationIdRef.current;
-
     if (abortCtrlRef.current) {
       abortCtrlRef.current.abort();
       abortCtrlRef.current = null;
     }
-
-    // The trash button in ChatInput is the same affordance as the trash
-    // icon on a sidebar item: it should DELETE the conversation entirely,
-    // not just clear its messages. Using `clearConversationHistory` here
-    // would leave the old conversation in the sidebar with an empty body
-    // and a fallback "New chat" title — confusing for users who clicked
-    // trash expecting "make this thread go away".
-    //
-    // Optimistically drop from the sidebar so the user sees the row
-    // disappear immediately; the network call is fire-and-forget.
     setConversations(prev => prev.filter(c => c.id !== oldConvId));
-
     deleteConversation(oldConvId, eoUuidRef.current).then(ok => {
-      if (!ok) {
-        console.warn('[delete-conversation] backend request failed');
-      }
+      if (!ok) console.warn('[delete-conversation] backend request failed');
     }).finally(() => {
-      // Reconcile with backend in case state diverged.
       void refreshConversations('replace');
     });
-
     deleteSnapshot(oldConvId).catch(() => {});
-
     const newId = crypto.randomUUID();
     localStorage.setItem(CONVERSATION_ID_STORAGE_KEY, newId);
     conversationIdRef.current = newId;
@@ -461,29 +390,20 @@ function AppInner() {
   }, [refreshConversations]);
 
   const handleStop = useCallback(() => {
-    // 1. Immediately abort frontend SSE read
     if (abortCtrlRef.current) {
       abortCtrlRef.current.abort();
       abortCtrlRef.current = null;
     }
-
-    // 2. Optimistic UI: show stopped immediately without waiting for backend
     updateBotMessage(content => content ? content + '\n\n' + t("status.stopped") : t("status.stopped"));
     setLoading(false);
-
-    // 3. Backend abort async — notify user on failure
     stopAgent(conversationIdRef.current).then(ok => {
-      if (!ok) {
-        updateBotMessage(content => content + '\n\n' + t("status.backendError"));
-      }
+      if (!ok) updateBotMessage(content => content + '\n\n' + t("status.backendError"));
     });
   }, [updateBotMessage, t]);
 
-  /** User clicked a conversation in the sidebar. */
   const handleSelectConversation = useCallback((id: string) => {
     if (loading) return;
     if (id === conversationIdRef.current) return;
-
     localStorage.setItem(CONVERSATION_ID_STORAGE_KEY, id);
     conversationIdRef.current = id;
     setActiveConversationId(id);
@@ -491,10 +411,8 @@ function AppInner() {
     void loadConversation(id);
   }, [loading, loadConversation]);
 
-  /** User clicked "New chat" in the sidebar. */
   const handleCreateConversation = useCallback(() => {
     if (loading) return;
-
     const newId = crypto.randomUUID();
     localStorage.setItem(CONVERSATION_ID_STORAGE_KEY, newId);
     conversationIdRef.current = newId;
@@ -511,25 +429,13 @@ function AppInner() {
     void refreshConversations('append', nextCursor);
   }, [nextCursor, conversationsLoadingMore, refreshConversations]);
 
-  /**
-   * User clicked the trash icon on a sidebar item.
-   *
-   * Optimistic delete: immediately remove the item from local UI state and
-   * fire-and-forget the backend request. We don't await or block the user —
-   * if the network call fails, we log it but don't roll back, since reloading
-   * the page will reconcile via /conversations anyway.
-   */
   const handleDeleteConversation = useCallback((id: string) => {
     if (loading) return;
     if (!id) return;
-
     const confirmed = window.confirm(t('sidebar.deleteConfirm'));
     if (!confirmed) return;
-
     const isActive = id === conversationIdRef.current;
-
     setConversations(prev => prev.filter(c => c.id !== id));
-
     if (isActive) {
       const newId = crypto.randomUUID();
       localStorage.setItem(CONVERSATION_ID_STORAGE_KEY, newId);
@@ -541,9 +447,7 @@ function AppInner() {
       initDoneRef.current = false;
       setHistoryLoading(false);
     }
-
     void deleteSnapshot(id).catch(() => {});
-
     void deleteConversation(id, eoUuidRef.current).catch(e => {
       console.warn('[delete-conversation] backend request failed:', e);
     });
@@ -556,7 +460,7 @@ function AppInner() {
       <div className={styles.blob1} />
       <div className={styles.blob2} />
 
-      <div className={styles.stage}>
+      <div className={`${styles.stage} ${immersive ? styles.stageImmersive : ''}`}>
         <ConversationSidebar
           conversations={conversations}
           activeConversationId={activeConversationId}
@@ -579,8 +483,35 @@ function AppInner() {
                 <p className={styles.subtitle}>{t("app.subtitle")}</p>
               </div>
             </div>
-            <ToolIndicators lamps={lamps} />
+            <div className={styles.headerRight}>
+              <span className={styles.modeBadge}>
+                <span className={styles.modeDot} />
+                {t("mode.plan")}
+              </span>
+              <span className={`${styles.modeBadge} ${loading ? styles.modeBadgeActive : ''}`}>
+                <span className={styles.modeDot} />
+                {loading ? t("mode.running") : t("mode.tools")}
+              </span>
+            </div>
           </header>
+
+          <div className={styles.toolBar}>
+            <ToolIndicators lamps={lamps} />
+          </div>
+
+          <div className={styles.quickBar}>
+            {QUICK_ACTIONS.map(action => (
+              <button
+                key={action.key}
+                type="button"
+                className={styles.quickBtn}
+                onClick={() => !loading && handleSend(action.message)}
+                disabled={loading}
+              >
+                {t(action.key as MessageKeys)}
+              </button>
+            ))}
+          </div>
 
           <div className={styles.chatWindowShell}>
             <ChatWindow messages={messages} loading={loading} />
@@ -593,12 +524,33 @@ function AppInner() {
           <ChatInput onSend={handleSend} onStop={handleStop} onClear={handleClearHistory} disabled={loading} />
         </div>
 
-        <div className={styles.codePanel}>
-          {rightPanelMode === 'code' ? (
-            <CodeViewer />
-          ) : (
-            <DebugPanel events={debugEvents} onClear={() => setDebugEvents([])} />
-          )}
+        <div className={`${styles.rightRail} ${immersive ? styles.rightRailImmersive : ''}`}>
+          <div className={styles.codePanel}>
+            <div className={styles.panelTabs}>
+              <button
+                type="button"
+                className={`${styles.panelTab} ${rightPanelMode === 'code' ? styles.panelTabActive : ''}`}
+                onClick={() => setRightPanelMode('code')}
+              >
+                {t('panel.code')}
+              </button>
+              <button
+                type="button"
+                className={`${styles.panelTab} ${rightPanelMode === 'debug' ? styles.panelTabActive : ''}`}
+                onClick={() => setRightPanelMode('debug')}
+              >
+                {t('panel.trace')}
+              </button>
+            </div>
+            <div className={styles.panelBody}>
+              {rightPanelMode === 'code' ? (
+                <CodeViewer />
+              ) : (
+                <DebugPanel events={debugEvents} onClear={() => setDebugEvents([])} />
+              )}
+            </div>
+          </div>
+          <HeroPanel immersive={immersive} onToggleImmersive={() => setImmersive(v => !v)} />
         </div>
       </div>
       <GitHubLink />

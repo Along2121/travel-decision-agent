@@ -91,9 +91,30 @@ export default function ConversationSidebar({
 
   return (
     <aside className={styles.sidebar} aria-label={t('sidebar.label')}>
+      <div className={styles.brandBlock}>
+        <div className={styles.avatar}>
+          <svg viewBox="0 0 40 40" width="34" height="34" aria-hidden="true">
+            <defs>
+              <linearGradient id="sideLogo" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0" stopColor="#f5c842" />
+                <stop offset="1" stopColor="#d79a24" />
+              </linearGradient>
+            </defs>
+            <path d="M20 5 L34 13 L34 27 L20 35 L6 27 L6 13 Z" fill="none" stroke="url(#sideLogo)" strokeWidth="2" />
+            <circle cx="20" cy="20" r="5" fill="url(#sideLogo)" />
+            <path d="M20 9 L20 14 M20 26 L20 31 M9 20 L14 20 M26 20 L31 20" stroke="url(#sideLogo)" strokeWidth="1.6" />
+          </svg>
+        </div>
+        <div className={styles.brandText}>
+          <p className={styles.brandName}>{t('brand.name')}</p>
+          <p className={styles.brandEn}>{t('brand.en')}</p>
+          <p className={styles.brandRole}>{t('brand.role')}</p>
+        </div>
+      </div>
+
       <div className={styles.head}>
         <span className={styles.brand}>
-          <span className={styles.brandDot}>⬡</span>
+          <span className={styles.brandDot}>◈</span>
           {t('sidebar.title')}
         </span>
         <button

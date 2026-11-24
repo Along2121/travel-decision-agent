@@ -24,6 +24,51 @@
   pointer-events: none;
 }
 
+/* ── Brand block ───────────────────────────────────────── */
+.brandBlock {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 16px 16px;
+  border-bottom: 1px solid var(--bg-border);
+  flex-shrink: 0;
+}
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 40% 35%, #f5c84222, #0d1420 70%);
+  border: 1px solid var(--accent-gold-dim);
+  box-shadow: 0 0 18px rgba(245,200,66,.12);
+  flex-shrink: 0;
+}
+.brandText {
+  min-width: 0;
+}
+.brandName {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: .06em;
+  color: var(--text-primary);
+  line-height: 1.15;
+}
+.brandEn {
+  font-family: var(--font-mono);
+  font-size: .56rem;
+  letter-spacing: .22em;
+  color: var(--accent-gold);
+  margin-top: 2px;
+}
+.brandRole {
+  font-size: .58rem;
+  color: var(--text-muted);
+  margin-top: 3px;
+}
+
 /* ── Head ──────────────────────────────────────────────── */
 .head {
   display: flex;
